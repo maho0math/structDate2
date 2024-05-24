@@ -159,7 +159,7 @@ int main()
     cout << "bt[2][2] = " << Bt[2 * N + 2] << endl;
     cout << "c3[2][2] = " << C3[2 * N + 2] << endl;
 
-    cout << "question: c1 = c3? answer: " << matrixChech(N, C1, C3) << endl;
+    cout << "question: c1 = c3? answer: " << matrixChech(N, C1, C3) << endl;//вот здесь сравнение выдает false, вероятно сам метод некорректный.
 
 
     /////////////////////////////////////////////////////////////////////////////////////
