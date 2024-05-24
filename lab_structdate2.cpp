@@ -11,7 +11,7 @@ using std::endl;
 
 typedef complex<float> sComplex;
 
-const int N = 100;
+const int N = 2048;
 
 sComplex* massiveMatrix(const int n)
 {
