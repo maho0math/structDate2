@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <complex>
 #include <mkl.h>
 #include <immintrin.h>
@@ -11,7 +11,7 @@ using std::endl;
 
 typedef complex<float> sComplex;
 
-const int N = 2048;
+const int N = 196;
 
 sComplex* massiveMatrix(const int n)
 {
@@ -49,38 +49,23 @@ void matrixMultiplication(const int n, sComplex* a, sComplex* b, sComplex* c)
     }
 }
 
-void matrixOptimizedMultiplication(sComplex* A, sComplex* B, sComplex* C, int blockSize)
-{
-    int numBlocks = N / blockSize;
-
-#pragma omp parallel for collapse(2) num_threads(128)
-    sComplex s = 0;
-    for (int iBlock = 0; iBlock < numBlocks; ++iBlock)
-    {
-        for (int jBlock = 0; jBlock < numBlocks; ++jBlock)
-        {
-            for (int kBlock = 0; kBlock < numBlocks; ++kBlock)
-            {
-                // Умножение блоков размером blockSize x blockSize
-                for (int i = 0; i < blockSize; ++i)
-                {
-                    int iOffset = iBlock * blockSize + i;
-                    for (int j = 0; j < blockSize; ++j)
-                    {
-                        int jOffset = jBlock * blockSize + j;
-                         s = 0;
-                        for (int k = 0; k < blockSize; ++k)
-                        {
-                            s += A[iOffset * N + kBlock * blockSize + k] *
-                                B[jOffset * N + kBlock * blockSize + k];
-                        }
-                        C[iOffset * N + jOffset] = s;
+void blockMatrixMultiplication(const int n, sComplex* a, sComplex* b, sComplex* c, int block_size) {
+#pragma omp parallel for num_threads(16)
+    for (int ii = 0; ii < n; ii += block_size) {
+        for (int jj = 0; jj < n; jj += block_size) {
+            for (int i = ii; i < ii + block_size && i < n; ++i) {
+                for (int j = jj; j < jj + block_size && j < n; ++j) {
+                    sComplex s = 0;
+                    for (int k = 0; k < n; k++) {
+                        s += a[i * n + k] * b[j * n + k];
                     }
+                    c[i * n + j] = s;
                 }
             }
         }
     }
 }
+
 
 bool matrixChech(const int n, sComplex* a, sComplex* b)
 {
@@ -88,7 +73,10 @@ bool matrixChech(const int n, sComplex* a, sComplex* b)
     for (int i = 0; i < n; ++i)
         for (int j = 0; j < n; ++j)
             if (std::abs(a[i * n + j] - b[i * n + j]) > eps)
+            {
                 return false;
+            }
+                
     return true;
 }
 
@@ -110,6 +98,7 @@ int main()
             B[i * N + j].real((float)rand() / RAND_MAX);
             B[i * N + j].imag(float(rand()) / RAND_MAX);
         }
+    cout << "Лабораторную работу №2 выполнил: Трифонов М.М., группа: 090301-ПОВа-023 \n\n";
     cout << "a[2][2] = " << A[2 * N + 2] << endl;
     cout << "b[2][2] = " << B[2 * N + 2] << endl;
     cout << "bt[2][2] = " << Bt[2 * N + 2] << endl;
@@ -147,8 +136,7 @@ int main()
     //////////////////////////////////////////////////////////////////////////////////////
     start = clock();
 
-    //matrixTransp(N, B, Bt);
-    matrixOptimizedMultiplication(A, Bt, C3, 64);
+    blockMatrixMultiplication(N, A, Bt, C3, 16);
 
     end = clock();
     elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
@@ -159,7 +147,7 @@ int main()
     cout << "bt[2][2] = " << Bt[2 * N + 2] << endl;
     cout << "c3[2][2] = " << C3[2 * N + 2] << endl;
 
-    cout << "question: c1 = c3? answer: " << matrixChech(N, C1, C3) << endl;//вот здесь сравнение выдает false, вероятно сам метод некорректный.
+    cout << "question: c2 = c3? answer: " << matrixChech(N, C2, C3) << endl;
 
 
     /////////////////////////////////////////////////////////////////////////////////////
